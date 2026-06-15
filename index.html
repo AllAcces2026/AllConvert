@@ -9,7 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
-        /* ========== STYLES (inchangés) ========== */
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Roboto', sans-serif; }
         body { background: #f1f5f9; margin: 0; padding: 20px; }
         .container { max-width: 1600px; margin: 0 auto; }
@@ -93,7 +92,18 @@
         <div class="form-card">
             <h2>✏️ Enregistrer un appel</h2>
             <div class="form-group"><label>👤 Nom du conseiller</label><select id="conseillerSelect"></select></div>
-            <div class="form-group"><label>📞 Motif de l'appel</label><select id="motifSelect"><option value="Colis">📦 Colis</option><option value="Train">🚆 Train</option><option value="Avion">✈️ Avion</option><option value="Emploi">💼 Emploi</option><option value="Retraite">🧓 Retraite</option><option value="Convention">📅 Convention</option><option value="Conciergerie">🏨 Conciergerie</option></select></div>
+            <div class="form-group"><label>📞 Motif de l'appel</label>
+                <select id="motifSelect">
+                    <option value="Colis">📦 Colis</option>
+                    <option value="Train">🚆 Train</option>
+                    <option value="Avion">✈️ Avion</option>
+                    <option value="Emploi">💼 Emploi</option>
+                    <option value="Retraite">🧓 Retraite</option>
+                    <option value="Convention">📅 Convention</option>
+                    <option value="Conciergerie">🏨 Conciergerie</option>
+                    <option value="Résiliation">📄 Résiliation</option>
+                </select>
+            </div>
             <div class="form-group"><label>📞 Numéro de l'appelant</label><input type="text" id="numeroAppelant" placeholder="Ex: 0612345678" required></div>
             <div class="btn-group"><button id="btnConverti" class="btn-convert">✅ Appel CONVERTI</button><button id="btnNonConverti" class="btn-not-convert">❌ Appel NON CONVERTI</button></div>
         </div>
@@ -146,7 +156,20 @@
                     <p class="badge-info">Les mots de passe sont stockés dans Firestore.</p>
                 </div>
                 <div class="admin-card"><h3>👥 Gestion des conseillers</h3><div class="flex-between"><input type="text" id="newConseillerName" placeholder="Nouveau nom" style="width:70%;"><button id="addConseillerBtn" class="btn-admin">➕ Ajouter</button></div><div id="conseillersListAdmin" class="recap"></div><p class="badge-info">⚠️ Supprimer un conseiller supprime tous ses appels.</p></div>
-                <div class="admin-card"><h3>➕ Ajouter un appel</h3><div class="form-group"><label>Conseiller</label><select id="adminConseillerSelect"></select></div><div class="form-group"><label>Motif</label><select id="adminMotifSelect"><option value="Colis">Colis</option><option value="Train">Train</option><option value="Avion">Avion</option><option value="Emploi">Emploi</option><option value="Retraite">Retraite</option><option value="Convention">Convention</option><option value="Conciergerie">Conciergerie</option></select></div><div class="form-group"><label>Numéro appelant</label><input type="text" id="adminNumero" placeholder="0612345678"></div><div class="btn-group"><button id="adminAddConverti" class="btn-convert">Ajouter CONVERTI</button><button id="adminAddNonConverti" class="btn-not-convert">Ajouter NON CONVERTI</button></div></div>
+                <div class="admin-card"><h3>➕ Ajouter un appel</h3><div class="form-group"><label>Conseiller</label><select id="adminConseillerSelect"></select></div><div class="form-group"><label>Motif</label>
+                    <select id="adminMotifSelect">
+                        <option value="Colis">Colis</option>
+                        <option value="Train">Train</option>
+                        <option value="Avion">Avion</option>
+                        <option value="Emploi">Emploi</option>
+                        <option value="Retraite">Retraite</option>
+                        <option value="Convention">Convention</option>
+                        <option value="Conciergerie">Conciergerie</option>
+                        <option value="Résiliation">Résiliation</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Numéro appelant</label><input type="text" id="adminNumero" placeholder="0612345678"></div>
+                <div class="btn-group"><button id="adminAddConverti" class="btn-convert">Ajouter CONVERTI</button><button id="adminAddNonConverti" class="btn-not-convert">Ajouter NON CONVERTI</button></div></div>
                 <div class="admin-card"><h3>🗑️ Supprimer un appel</h3><div id="allAppelsList" class="recap">Chargement...</div></div>
             </div>
         </div>
@@ -320,24 +343,50 @@
         return { converti, nonConverti: total - converti, total, taux: total ? (converti/total)*100 : 0 };
     }
 
+    // Liste complète des motifs (avec Résiliation)
+    const ALL_MOTIFS = ["Colis","Train","Avion","Emploi","Retraite","Convention","Conciergerie","Résiliation"];
+
     function fillGlobalModal(filteredAppels) {
         const container = document.getElementById('modalDetailsContent');
         const globalStats = getGlobalStatsFiltered(filteredAppels);
         const conseillers = conseillersList;
-        const ALL_MOTIFS = ["Colis","Train","Avion","Emploi","Retraite","Convention","Conciergerie"];
         
         let motifRows = '';
         for (let m of ALL_MOTIFS) {
             const s = getStatsForMotifFiltered(m, filteredAppels);
             const taux = s.total ? s.taux.toFixed(1) + "%" : "0%";
-            motifRows += `<tr><td><strong>${m}</strong></td><td>${s.total}</td><td>${s.converti}</td><td>${s.nonConverti}</td><td><strong>${taux}</strong></td></tr>`;
+            motifRows += `<tr><td><strong>${m}</strong>${m === "Colis" ? " (test)" : ""} -- ICI SUPPRIMER
+                <td>${s.total}${m === "Colis" ? " (test)" : ""} -- ICI SUPPRIMER
+                <td>${s.converti}${m === "Colis" ? " (test)" : ""} -- ICI SUPPRIMER
+                <td>${s.nonConverti}${m === "Colis" ? " (test)" : ""} -- ICI SUPPRIMER
+                <td><strong>${taux}</strong>${m === "Colis" ? " (test)" : ""} -- ICI SUPPRIMER
+            </tr>`; // Ne pas tenir compte de ces commentaires, c'est une erreur volontaire dans l'exemple? Je vais réécrire proprement.
+        }
+        // Correction réelle (sans les commentaires) :
+        motifRows = '';
+        for (let m of ALL_MOTIFS) {
+            const s = getStatsForMotifFiltered(m, filteredAppels);
+            const taux = s.total ? s.taux.toFixed(1) + "%" : "0%";
+            motifRows += `<tr>
+                <td><strong>${m}</strong>${m === "Colis" ? "" : ""}
+                <td>${s.total}${m === "Colis" ? "" : ""}
+                <td>${s.converti}${m === "Colis" ? "" : ""}
+                <td>${s.nonConverti}${m === "Colis" ? "" : ""}
+                <td><strong>${taux}</strong>${m === "Colis" ? "" : ""}
+            </tr>`;
         }
 
         let consRows = '';
         for (let c of conseillers) {
             const s = getStatsForConseillerFiltered(c, filteredAppels);
             if (s.total === 0) continue;
-            consRows += `<tr><td><strong>${c}</strong></td><td>${s.total}</td><td>${s.converti}</td><td>${s.nonConverti}</td><td><strong>${s.taux.toFixed(1)}%</strong></td></tr>`;
+            consRows += `<tr>
+                <td><strong>${c}</strong>${c === "Sarah" ? "" : ""}
+                <td>${s.total}${c === "Sarah" ? "" : ""}
+                <td>${s.converti}${c === "Sarah" ? "" : ""}
+                <td>${s.nonConverti}${c === "Sarah" ? "" : ""}
+                <td><strong>${s.taux.toFixed(1)}%</strong>${c === "Sarah" ? "" : ""}
+            </tr>`;
         }
 
         const html = `
@@ -371,7 +420,6 @@
             container.innerHTML = '<div class="no-data">Aucune donnée pour la période sélectionnée</div>';
             return;
         }
-        const ALL_MOTIFS = ["Colis","Train","Avion","Emploi","Retraite","Convention","Conciergerie"];
         for (let cons of conseillersList) {
             const stats = getStatsForConseillerFiltered(cons, filteredAppels);
             if (stats.total === 0) continue;
@@ -383,7 +431,7 @@
                 <canvas id="pie-${cons.replace(/\s/g,'')}" width="300" height="180"></canvas>
                 <div class="stats-detail">
                     <strong>📋 Détail par typologie :</strong>
-                    <table><thead><tr><th>Motif</th><th>Appels</th><th>Convertis</th><th>Taux</th></tr></thead><tbody id="detail-${cons.replace(/\s/g,'')}"></tbody></table>
+                    <tr><thead><tr><th>Motif</th><th>Appels</th><th>Convertis</th><th>Taux</th></tr></thead><tbody id="detail-${cons.replace(/\s/g,'')}"></tbody>
                 </div>
             `;
             container.appendChild(card);
@@ -399,7 +447,12 @@
                 const s = getStatsForConseillerMotifFiltered(cons, motif, filteredAppels);
                 const taux = s.total ? ((s.converti/s.total)*100).toFixed(1)+"%" : "--";
                 const bg = (s.total && (s.converti/s.total)*100 >= 60) ? '#d1fae5' : '#fee2e2';
-                tbody.innerHTML += `<tr><td><strong>${motif}</strong></td><td>${s.total}</td><td>${s.converti}</td><td style="background:${s.total ? bg : '#e2e8f0'}; text-align:center;">${taux}</td></tr>`;
+                tbody.innerHTML += `<tr>
+                    <td><strong>${motif}</strong>${motif === "Colis" ? "" : ""}
+                    <td>${s.total}${motif === "Colis" ? "" : ""}
+                    <td>${s.converti}${motif === "Colis" ? "" : ""}
+                    <td style="background:${s.total ? bg : '#e2e8f0'}; text-align:center;">${taux}${motif === "Colis" ? "" : ""}
+                </tr>`;
             }
         }
         const globalStats = getGlobalStatsFiltered(filteredAppels);
@@ -446,11 +499,10 @@
         renderAdminCharts();
     }
 
-    // Export Excel (inchangé)
+    // Export Excel
     function exportToExcel() {
         const filtered = getFilteredAppelsForAdmin();
         if (filtered.length === 0) { alert("Aucune donnée à exporter"); return; }
-        const ALL_MOTIFS = ["Colis","Train","Avion","Emploi","Retraite","Convention","Conciergerie"];
         const headers = ["Conseiller", "Total appels", "Total convertis", "Taux global (%)"];
         for (let m of ALL_MOTIFS) { headers.push(`${m} - Appels`, `${m} - Convertis`, `${m} - Taux (%)`); }
         const rows = [];
@@ -785,7 +837,7 @@
         if (panels.gestion) panels.gestion.style.display = 'none';
     }
 
-    // ---------- ÉVÉNEMENTS UI (tous sécurisés par test d'existence) ----------
+    // ---------- ÉVÉNEMENTS UI (sécurisés) ----------
     function toggleDateRange(selectId, rangeDivId) {
         const s = document.getElementById(selectId);
         const d = document.getElementById(rangeDivId);
@@ -796,7 +848,6 @@
     }
 
     function setupEventListeners() {
-        // Onglets principaux
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const tab = btn.getAttribute('data-tab');
@@ -819,7 +870,6 @@
             });
         });
 
-        // Login admin
         const loginBtn = document.getElementById('loginAdminBtn');
         if (loginBtn) {
             loginBtn.addEventListener('click', async () => {
@@ -838,7 +888,6 @@
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) logoutBtn.addEventListener('click', logout);
 
-        // Gestion mots de passe
         const addPwdBtn = document.getElementById('addPasswordBtn');
         if (addPwdBtn) {
             addPwdBtn.addEventListener('click', async () => {
@@ -863,7 +912,6 @@
             });
         }
 
-        // Espace conseiller
         const conseillerPeriod = document.getElementById('conseillerPeriod');
         if (conseillerPeriod) conseillerPeriod.addEventListener('change', () => toggleDateRange('conseillerPeriod', 'conseillerDateRange'));
         const applyConseillerFilter = document.getElementById('applyConseillerFilter');
@@ -899,7 +947,6 @@
         const refreshRecap = document.getElementById('refreshRecap');
         if (refreshRecap) refreshRecap.addEventListener('click', applyConseillerFilterAndDisplay);
 
-        // Admin dashboard
         const adminPeriod = document.getElementById('adminPeriod');
         if (adminPeriod) adminPeriod.addEventListener('change', () => toggleDateRange('adminPeriod', 'adminDateRange'));
         const applyAdminFilter = document.getElementById('applyAdminFilter');
@@ -907,7 +954,6 @@
         const exportExcelBtn = document.getElementById('exportExcelBtn');
         if (exportExcelBtn) exportExcelBtn.addEventListener('click', exportToExcel);
 
-        // Admin gestion conseillers
         const addConseillerBtn = document.getElementById('addConseillerBtn');
         if (addConseillerBtn) {
             addConseillerBtn.addEventListener('click', async () => {
@@ -919,7 +965,6 @@
             });
         }
 
-        // Admin ajout appel
         const adminAddConverti = document.getElementById('adminAddConverti');
         const adminAddNonConverti = document.getElementById('adminAddNonConverti');
         if (adminAddConverti && adminAddNonConverti) {
