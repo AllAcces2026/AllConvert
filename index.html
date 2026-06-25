@@ -24,18 +24,22 @@
         .form-card, .admin-card { background: #f8fafc; border-radius: 24px; padding: 20px; margin-bottom: 32px; border: 1px solid #e2e8f0; }
         .form-group { margin-bottom: 18px; }
         label { font-weight: 600; display: block; margin-bottom: 6px; color: #0f172a; }
-        select, input, button { border-radius: 60px; }
-        select, input { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; background: white; font-size: 1rem; }
+        select, input, textarea, button { border-radius: 60px; }
+        select, input, textarea { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; background: white; font-size: 1rem; }
+        textarea { border-radius: 20px; resize: vertical; }
         .btn-group { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
         button { border: none; padding: 10px 24px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.95rem; }
         .btn-convert { background: #059669; color: white; }
         .btn-convert:hover { background: #047857; }
         .btn-not-convert { background: #dc2626; color: white; }
         .btn-not-convert:hover { background: #b91c1c; }
+        .btn-incertain { background: #f59e0b; color: white; }
+        .btn-incertain:hover { background: #d97706; }
+        .btn-orange { background: #f97316; color: white; }
+        .btn-orange:hover { background: #ea580c; }
         .btn-refresh, .btn-admin { background: #334155; color: white; margin-bottom: 10px; }
         .btn-secondary { background: #475569; color: white; }
         .btn-export { background: #2c6e2c; color: white; }
-        .btn-export-detail { background: #0c4a6e; color: white; }
         .recap, .appel-list { background: #f1f5f9; border-radius: 20px; padding: 16px; font-size: 0.9rem; max-height: 300px; overflow-y: auto; }
         .charts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 28px; margin-top: 20px; }
         .chart-card { background: #ffffff; border-radius: 24px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
@@ -51,7 +55,7 @@
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(3px); }
         .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border-radius: 28px; width: 90%; max-width: 1000px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 35px rgba(0,0,0,0.3); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px; }
-        .close { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .close:hover { color: black; }
         .modal table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.85rem; }
         .modal th, .modal td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; vertical-align: top; }
@@ -59,7 +63,6 @@
         .modal tr:nth-child(even) { background-color: #f8fafc; }
         .btn-close-modal { background: #334155; color: white; border: none; padding: 6px 16px; border-radius: 40px; cursor: pointer; margin-top: 10px; }
         .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .section-title { font-size: 1.4rem; font-weight: 700; margin: 20px 0 10px 0; color: #0f172a; border-left: 5px solid #a7f3d0; padding-left: 15px; }
         .filter-bar { background: #f8fafc; padding: 15px; border-radius: 60px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
         .filter-group { flex: 1; min-width: 150px; }
         .filter-group label { font-size: 0.8rem; margin-bottom: 4px; }
@@ -69,6 +72,10 @@
         .password-list { background: #f8fafc; padding: 10px; border-radius: 20px; margin-top: 10px; }
         .password-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #cbd5e1; }
         .show-pwd { cursor: pointer; font-size: 0.8rem; background: #e2e8f0; padding: 2px 8px; border-radius: 20px; }
+        #global-status { padding: 10px; background: #eef2ff; border-radius: 12px; margin-bottom: 20px; }
+        .error { color: #dc2626; background: #fee2e2; padding: 10px; border-radius: 12px; }
+        .success { color: #059669; background: #d1fae5; padding: 10px; border-radius: 12px; }
+        .loading { color: #2563eb; background: #dbeafe; padding: 10px; border-radius: 12px; }
         @media (max-width: 700px) {
             .charts-grid { grid-template-columns: 1fr; }
             .tab-btn, .sub-tab-btn { padding: 6px 12px; font-size: 0.9rem; }
@@ -80,6 +87,8 @@
 </head>
 <body>
 <div class="container">
+    <div id="global-status" class="loading">⏳ Connexion à Firebase...</div>
+
     <div class="tab-bar">
         <div class="tab-buttons">
             <button class="tab-btn active" data-tab="conseiller">📞 ESPACE CONSEILLER</button>
@@ -95,18 +104,35 @@
             <div class="form-group"><label>👤 Nom du conseiller</label><select id="conseillerSelect"></select></div>
             <div class="form-group"><label>📞 Motif de l'appel</label>
                 <select id="motifSelect">
-                    <option value="Colis">📦 Colis</option>
-                    <option value="Train">🚆 Train</option>
-                    <option value="Avion">✈️ Avion</option>
-                    <option value="Emploi">💼 Emploi</option>
-                    <option value="Retraite">🧓 Retraite</option>
-                    <option value="Convention">📅 Convention</option>
-                    <option value="Conciergerie">🏨 Conciergerie</option>
-                    <option value="Résiliation">📄 Résiliation</option>
+                    <optgroup label="📦 Colis / Transport">
+                        <option value="Colis">Colis</option>
+                        <option value="Train">Train</option>
+                        <option value="Avion">Avion</option>
+                    </optgroup>
+                    <optgroup label="💼 Emploi">
+                        <option value="Recherche d'emploi">Recherche d'emploi</option>
+                        <option value="Convention">Convention</option>
+                        <option value="Retraite">Retraite</option>
+                    </optgroup>
+                    <optgroup label="📞 Résiliation">
+                        <option value="Résiliation">Résiliation</option>
+                        <option value="Conciergerie">Conciergerie</option>
+                    </optgroup>
                 </select>
             </div>
             <div class="form-group"><label>📞 Numéro de l'appelant</label><input type="text" id="numeroAppelant" placeholder="Ex: 0612345678" required></div>
-            <div class="btn-group"><button id="btnConverti" class="btn-convert">✅ Appel CONVERTI</button><button id="btnNonConverti" class="btn-not-convert">❌ Appel NON CONVERTI</button></div>
+            <div class="form-group"><label>💬 Commentaire (optionnel)</label>
+                <textarea id="commentaireAppel" rows="2" placeholder="Ajoutez une note supplémentaire..."></textarea>
+            </div>
+            <div class="btn-group">
+                <button id="btnConverti" class="btn-convert">✅ Converti</button>
+                <button id="btnNonConverti" class="btn-not-convert">❌ Non converti</button>
+                <button id="btnIncertain" class="btn-incertain">❓ Incertain</button>
+                <button id="btnOrange" class="btn-orange">🍊 Orange</button>
+            </div>
+            <p style="font-size:0.85rem; color:#475569; margin-top:8px;">
+                <span class="badge-info">💡 Le bouton Orange enregistre un appel NON CONVERTI avec le tag "[Orange]" dans le commentaire.</span>
+            </p>
         </div>
         <div class="form-card">
             <h3>📋 Historique du conseiller (filtre temporel local)</h3>
@@ -117,15 +143,16 @@
             </div>
             <div id="recapConseiller" class="recap">Sélectionnez un conseiller</div>
         </div>
-        <div class="form-card"><p><span class="badge-info">🎯 Objectif général : 60% de conversion</span></p></div>
+        <div class="form-card"><p><span class="badge-info">🎯 Objectif général : 60% de conversion (hors incertains)</span></p></div>
     </div>
 
-    <!-- PANEL ADMINISTRATEUR (protégé) -->
+    <!-- PANEL ADMIN -->
     <div id="adminPanel" class="panel">
         <div id="adminLoginScreen" style="text-align: center; padding: 40px;">
             <h2>🔐 Accès administrateur</h2>
             <div style="max-width: 300px; margin: 20px auto;">
                 <input type="password" id="adminPasswordInput" placeholder="Mot de passe" style="width:100%; margin-bottom:10px;">
+                <div id="loginError" style="color:red; font-size:0.9rem; display:none;">Mot de passe incorrect</div>
                 <div style="text-align:left; margin-bottom:10px;"><label><input type="checkbox" id="rememberAdmin"> Se souvenir de moi</label></div>
                 <button id="loginAdminBtn" class="btn-admin">Se connecter</button>
             </div>
@@ -140,8 +167,7 @@
                     <div class="filter-group"><label>Période</label><select id="adminPeriod"><option value="today">Aujourd'hui</option><option value="week">Cette semaine</option><option value="month">Ce mois</option><option value="custom">Intervalle personnalisé</option></select></div>
                     <div class="filter-group" id="adminDateRange" style="display:none;"><label>Du</label><input type="date" id="adminDateStart"><label>Au</label><input type="date" id="adminDateEnd"></div>
                     <div class="filter-group"><button id="applyAdminFilter" class="btn-secondary">Appliquer filtre</button></div>
-                    <div class="filter-group"><button id="exportExcelBtn" class="btn-export">📎 Export synthétique (rapport)</button></div>
-                    <div class="filter-group"><button id="exportDetailsBtn" class="btn-export-detail">📋 Export liste des appels (détaillé)</button></div>
+                    <div class="filter-group"><button id="exportExcelBtn" class="btn-export">📎 Exporter Excel (rapport)</button></div>
                 </div>
                 <div id="adminChartsContainer"><div class="no-data">Chargement des données...</div></div>
             </div>
@@ -158,20 +184,35 @@
                     <p class="badge-info">Les mots de passe sont stockés dans Firestore.</p>
                 </div>
                 <div class="admin-card"><h3>👥 Gestion des conseillers</h3><div class="flex-between"><input type="text" id="newConseillerName" placeholder="Nouveau nom" style="width:70%;"><button id="addConseillerBtn" class="btn-admin">➕ Ajouter</button></div><div id="conseillersListAdmin" class="recap"></div><p class="badge-info">⚠️ Supprimer un conseiller supprime tous ses appels.</p></div>
-                <div class="admin-card"><h3>➕ Ajouter un appel</h3><div class="form-group"><label>Conseiller</label><select id="adminConseillerSelect"></select></div><div class="form-group"><label>Motif</label>
-                    <select id="adminMotifSelect">
-                        <option value="Colis">Colis</option>
-                        <option value="Train">Train</option>
-                        <option value="Avion">Avion</option>
-                        <option value="Emploi">Emploi</option>
-                        <option value="Retraite">Retraite</option>
-                        <option value="Convention">Convention</option>
-                        <option value="Conciergerie">Conciergerie</option>
-                        <option value="Résiliation">Résiliation</option>
-                    </select>
+                <div class="admin-card"><h3>➕ Ajouter un appel (admin)</h3>
+                    <div class="form-group"><label>Conseiller</label><select id="adminConseillerSelect"></select></div>
+                    <div class="form-group"><label>Motif</label>
+                        <select id="adminMotifSelect">
+                            <optgroup label="📦 Colis / Transport">
+                                <option value="Colis">Colis</option>
+                                <option value="Train">Train</option>
+                                <option value="Avion">Avion</option>
+                            </optgroup>
+                            <optgroup label="💼 Emploi">
+                                <option value="Recherche d'emploi">Recherche d'emploi</option>
+                                <option value="Convention">Convention</option>
+                                <option value="Retraite">Retraite</option>
+                            </optgroup>
+                            <optgroup label="📞 Résiliation">
+                                <option value="Résiliation">Résiliation</option>
+                                <option value="Conciergerie">Conciergerie</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Numéro</label><input type="text" id="adminNumero" placeholder="0612345678"></div>
+                    <div class="form-group"><label>Commentaire</label><textarea id="adminCommentaire" rows="2"></textarea></div>
+                    <div class="btn-group">
+                        <button id="adminAddConverti" class="btn-convert">Converti</button>
+                        <button id="adminAddNonConverti" class="btn-not-convert">Non converti</button>
+                        <button id="adminAddIncertain" class="btn-incertain">Incertain</button>
+                        <button id="adminAddOrange" class="btn-orange">🍊 Orange</button>
+                    </div>
                 </div>
-                <div class="form-group"><label>Numéro appelant</label><input type="text" id="adminNumero" placeholder="0612345678"></div>
-                <div class="btn-group"><button id="adminAddConverti" class="btn-convert">Ajouter CONVERTI</button><button id="adminAddNonConverti" class="btn-not-convert">Ajouter NON CONVERTI</button></div></div>
                 <div class="admin-card"><h3>🗑️ Supprimer un appel</h3><div id="allAppelsList" class="recap">Chargement...</div></div>
             </div>
         </div>
@@ -179,7 +220,7 @@
     <footer>Données synchronisées en temps réel via Firebase • Conversion 01→08</footer>
 </div>
 
-<!-- MODALE GÉNÉRALE -->
+<!-- MODALE -->
 <div id="globalModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -196,23 +237,20 @@
 <script>
     // ---------- FERMETURE POPUP ----------
     window.fermerPopup = function() {
-        const modal = document.getElementById('globalModal');
-        if (modal) modal.style.display = 'none';
+        document.getElementById('globalModal').style.display = 'none';
     };
 
-    // ---------- CONFIGURATION FIREBASE (à garder telle quelle) ----------
+    // ---------- CONFIGURATION FIREBASE ----------
     const firebaseConfig = {
-        apiKey: "AIzaSyAntBgEmWZpXCrczgHAtNFIp8ukbxyL1yc",
-        authDomain: "allconvert-aed62.firebaseapp.com",
-        projectId: "allconvert-aed62",
-        storageBucket: "allconvert-aed62.firebasestorage.app",
-        messagingSenderId: "42188770625",
-        appId: "1:42188770625:web:9825c41b12472df91aa5c0"
+        apiKey: "AIzaSyA8qI5KoFvsO9KhaRHSKVjAbDszseZ9AZ0",
+        authDomain: "conversion-v2.firebaseapp.com",
+        projectId: "conversion-v2",
+        storageBucket: "conversion-v2.firebasestorage.app",
+        messagingSenderId: "20188036267",
+        appId: "1:20188036267:web:ee204586fdb760a6098bee"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
 
-    // ---------- VARIABLES GLOBALES ----------
+    let db;
     let allAppels = [];
     let conseillersList = [];
     let adminPasswords = [];
@@ -220,12 +258,48 @@
     let currentAdminFilter = { period: 'today', start: null, end: null };
     let unsubscribeAppels = null, unsubscribeConseillers = null, unsubscribePasswords = null;
 
-    // ---------- INITIALISATION : ne crée pas de conseillers automatiques ----------
+    // ---------- FONCTION DE LOG ----------
+    function setStatus(message, type = 'loading') {
+        const statusDiv = document.getElementById('global-status');
+        statusDiv.className = type;
+        const icons = { loading: '⏳', success: '✅', error: '❌' };
+        statusDiv.textContent = (icons[type] || '') + ' ' + message;
+        console.log(message);
+    }
+
+    // ---------- INITIALISATION FIREBASE ----------
+    function initFirebase() {
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            setStatus('Firebase initialisé, chargement des données...', 'loading');
+            return true;
+        } catch (err) {
+            setStatus('Erreur Firebase: ' + err.message, 'error');
+            console.error(err);
+            return false;
+        }
+    }
+
+    // ---------- INITIALISATION DONNÉES PAR DÉFAUT ----------
     async function initializeDefaultData() {
-        const passwordsSnapshot = await db.collection("passwords").get();
-        if (passwordsSnapshot.empty) {
-            await db.collection("passwords").add({ hash: "admin123" });
-            console.log("Mot de passe admin par défaut créé");
+        try {
+            const conseillersSnapshot = await db.collection("conseillers").get();
+            if (conseillersSnapshot.empty) {
+                const defaultConseillers = ["Sarah", "Karim", "Léa"];
+                for (let nom of defaultConseillers) {
+                    await db.collection("conseillers").doc(nom).set({ nom: nom });
+                }
+                setStatus('Conseillers par défaut créés.', 'success');
+            }
+            const passwordsSnapshot = await db.collection("passwords").get();
+            if (passwordsSnapshot.empty) {
+                await db.collection("passwords").add({ hash: "admin123" });
+                setStatus('Mot de passe admin par défaut créé (admin123).', 'success');
+            }
+        } catch (err) {
+            console.error("Erreur d'initialisation:", err);
+            setStatus("Erreur d'initialisation: " + err.message, 'error');
         }
     }
 
@@ -288,254 +362,81 @@
         });
     }
 
-    function applyConseillerFilterAndDisplay() {
-        const conseiller = document.getElementById('conseillerSelect').value;
-        if (!conseiller) return;
-        const period = document.getElementById('conseillerPeriod').value;
-        let start = null, end = null;
-        if (period === 'custom') {
-            start = document.getElementById('conseillerDateStart').value;
-            end = document.getElementById('conseillerDateEnd').value;
-            if (!start || !end) { alert("Sélectionnez une plage de dates"); return; }
-        }
-        let filtered = allAppels.filter(a => a.conseiller === conseiller);
-        filtered = filterAppelsByDate(filtered, period, start, end);
-        filtered.sort((a,b) => b.timestamp - a.timestamp);
-        const recapDiv = document.getElementById('recapConseiller');
-        if (!filtered.length) {
-            recapDiv.innerHTML = `<p>Aucun appel pour ${conseiller} sur cette période.</p>`;
-            return;
-        }
-        let html = `<strong>📞 ${filtered.length} appels :</strong><br>`;
-        filtered.slice(0, 30).forEach(a => {
-            html += `<p>${new Date(a.timestamp).toLocaleString()} - ${a.motif} - N°${a.numero} : ${a.converti ? '✅ CONVERTI' : '❌ NON CONVERTI'}</p>`;
-        });
-        recapDiv.innerHTML = html;
-    }
-
-    // Statistiques
-    function getFilteredAppelsForAdmin() {
-        return filterAppelsByDate(allAppels, currentAdminFilter.period, currentAdminFilter.start, currentAdminFilter.end);
-    }
-
+    // ---------- STATISTIQUES ----------
     function getStatsForConseillerFiltered(conseiller, filtered) {
         const appels = filtered.filter(a => a.conseiller === conseiller);
-        const converti = appels.filter(a => a.converti).length;
+        const converti = appels.filter(a => a.statut === 'converti').length;
+        const nonConverti = appels.filter(a => a.statut === 'non_converti').length;
+        const incertain = appels.filter(a => a.statut === 'incertain').length;
         const total = appels.length;
-        return { converti, nonConverti: total - converti, total, taux: total ? (converti/total)*100 : 0 };
+        const base = converti + nonConverti;
+        const taux = base ? (converti / base) * 100 : 0;
+        return { converti, nonConverti, incertain, total, taux };
     }
 
     function getStatsForConseillerMotifFiltered(conseiller, motif, filtered) {
         const appels = filtered.filter(a => a.conseiller === conseiller && a.motif === motif);
-        const converti = appels.filter(a => a.converti).length;
+        const converti = appels.filter(a => a.statut === 'converti').length;
+        const nonConverti = appels.filter(a => a.statut === 'non_converti').length;
+        const incertain = appels.filter(a => a.statut === 'incertain').length;
         const total = appels.length;
-        return { converti, total };
+        const base = converti + nonConverti;
+        const taux = base ? (converti / base) * 100 : 0;
+        return { converti, nonConverti, incertain, total, taux };
     }
 
     function getGlobalStatsFiltered(filtered) {
-        const converti = filtered.filter(a => a.converti).length;
+        const converti = filtered.filter(a => a.statut === 'converti').length;
+        const nonConverti = filtered.filter(a => a.statut === 'non_converti').length;
+        const incertain = filtered.filter(a => a.statut === 'incertain').length;
         const total = filtered.length;
-        return { converti, nonConverti: total - converti, total };
+        const base = converti + nonConverti;
+        const taux = base ? (converti / base) * 100 : 0;
+        return { converti, nonConverti, incertain, total, taux };
     }
 
     function getStatsForMotifFiltered(motif, filtered) {
         const appels = filtered.filter(a => a.motif === motif);
-        const converti = appels.filter(a => a.converti).length;
+        const converti = appels.filter(a => a.statut === 'converti').length;
+        const nonConverti = appels.filter(a => a.statut === 'non_converti').length;
+        const incertain = appels.filter(a => a.statut === 'incertain').length;
         const total = appels.length;
-        return { converti, nonConverti: total - converti, total, taux: total ? (converti/total)*100 : 0 };
+        const base = converti + nonConverti;
+        const taux = base ? (converti / base) * 100 : 0;
+        return { converti, nonConverti, incertain, total, taux };
     }
 
-    const ALL_MOTIFS = ["Colis","Train","Avion","Emploi","Retraite","Convention","Conciergerie","Résiliation"];
-
-    function fillGlobalModal(filteredAppels) {
-        const container = document.getElementById('modalDetailsContent');
-        const globalStats = getGlobalStatsFiltered(filteredAppels);
-        const conseillers = conseillersList;
-        
-        let motifRows = '';
-        for (let m of ALL_MOTIFS) {
-            const s = getStatsForMotifFiltered(m, filteredAppels);
-            const taux = s.total ? s.taux.toFixed(1) + "%" : "0%";
-            motifRows += `<tr><td><strong>${m}</strong></td><td>${s.total}</td><td>${s.converti}</td><td>${s.nonConverti}</td><td><strong>${taux}</strong></td></tr>`;
-        }
-
-        let consRows = '';
-        for (let c of conseillers) {
-            const s = getStatsForConseillerFiltered(c, filteredAppels);
-            if (s.total === 0) continue;
-            consRows += `<tr><td><strong>${c}</strong></td><td>${s.total}</td><td>${s.converti}</td><td>${s.nonConverti}</td><td><strong>${s.taux.toFixed(1)}%</strong></td></tr>`;
-        }
-
-        const html = `
-            <div style="margin-bottom: 20px; padding: 10px; background: #eef2ff; border-radius: 16px;">
-                <strong>Total appels :</strong> ${globalStats.total} &nbsp;|&nbsp;
-                <strong>Convertis :</strong> ${globalStats.converti} &nbsp;|&nbsp;
-                <strong>Non convertis :</strong> ${globalStats.nonConverti} &nbsp;|&nbsp;
-                <strong>Taux global :</strong> ${globalStats.total ? ((globalStats.converti/globalStats.total)*100).toFixed(1) : 0}%
-            </div>
-            <h4>📋 Détail par typologie (tous conseillers)</h4>
-            <table class="modal-table">
-                <thead><tr><th>Motif</th><th>Appels</th><th>Convertis</th><th>Non convertis</th><th>Taux conversion</th></tr></thead>
-                <tbody>${motifRows}</tbody>
-            </table>
-            <h4>👥 Détail par conseiller (tous motifs)</h4>
-            <table class="modal-table">
-                <thead><tr><th>Conseiller</th><th>Appels</th><th>Convertis</th><th>Non convertis</th><th>Taux conversion</th></tr></thead>
-                <tbody>${consRows}</tbody>
-            </table>
-        `;
-        container.innerHTML = html;
-    }
-
-    function renderAdminCharts() {
-        const container = document.getElementById('adminChartsContainer');
-        if (!container) return;
-        destroyCharts();
-        container.innerHTML = '';
-        const filteredAppels = getFilteredAppelsForAdmin();
-        if (conseillersList.length === 0 || filteredAppels.length === 0) {
-            container.innerHTML = '<div class="no-data">Aucune donnée pour la période sélectionnée</div>';
-            return;
-        }
-        for (let cons of conseillersList) {
-            const stats = getStatsForConseillerFiltered(cons, filteredAppels);
-            if (stats.total === 0) continue;
-            const card = document.createElement('div');
-            card.className = 'chart-card';
-            card.innerHTML = `
-                <h4>👤 ${cons}</h4>
-                <div class="global-taux">📊 Taux global : <strong>${stats.taux.toFixed(1)}%</strong> (${stats.converti}/${stats.total})</div>
-                <canvas id="pie-${cons.replace(/\s/g,'')}" width="300" height="180"></canvas>
-                <div class="stats-detail">
-                    <strong>📋 Détail par typologie :</strong>
-                    <table><thead><tr><th>Motif</th><th>Appels</th><th>Convertis</th><th>Taux</th></tr></thead><tbody id="detail-${cons.replace(/\s/g,'')}"></tbody></table>
-                </div>
-            `;
-            container.appendChild(card);
-            const ctx = card.querySelector('canvas').getContext('2d');
-            const chart = new Chart(ctx, {
-                type: 'pie',
-                data: { labels: ['Converti', 'Non converti'], datasets: [{ data: [stats.converti, stats.nonConverti], backgroundColor: ['#a7f3d0', '#fecaca'] }] },
-                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    // ---------- CRUD ----------
+    async function addAppelFirebase(conseiller, motif, statut, numero, commentaire = '') {
+        if (!conseiller || !motif || !numero.trim()) return false;
+        if (!conseillersList.includes(conseiller)) return false;
+        try {
+            await db.collection("appels").add({
+                conseiller: conseiller,
+                motif: motif,
+                statut: statut,
+                numero: numero.trim(),
+                commentaire: commentaire.trim(),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-            activeCharts.push(chart);
-            const tbody = card.querySelector('tbody');
-            for (let motif of ALL_MOTIFS) {
-                const s = getStatsForConseillerMotifFiltered(cons, motif, filteredAppels);
-                const taux = s.total ? ((s.converti/s.total)*100).toFixed(1)+"%" : "--";
-                const bg = (s.total && (s.converti/s.total)*100 >= 60) ? '#d1fae5' : '#fee2e2';
-                tbody.innerHTML += `<tr><td><strong>${motif}</strong></td><td>${s.total}</td><td>${s.converti}</td><td style="background:${s.total ? bg : '#e2e8f0'}; text-align:center;">${taux}</td></tr>`;
-            }
-        }
-        const globalStats = getGlobalStatsFiltered(filteredAppels);
-        const globalCard = document.createElement('div');
-        globalCard.className = 'chart-card';
-        globalCard.innerHTML = `
-            <h4>🌍 GÉNÉRAL - Ensemble des appels (période filtrée)</h4>
-            <canvas id="globalPieChart" width="300" height="180"></canvas>
-            <div style="text-align:center; margin-top:8px;">
-                <span style="font-size:1rem; font-weight:bold;">${globalStats.total} appels</span><br>
-                ✅ ${globalStats.converti} convertis &nbsp;|&nbsp; ❌ ${globalStats.nonConverti} non convertis<br>
-                <strong>Taux : ${globalStats.total ? ((globalStats.converti/globalStats.total)*100).toFixed(1) : 0}%</strong>
-            </div>
-            <button class="btn-detail open-modal-btn" style="margin-top:12px;">🔍 Voir détails complets</button>
-        `;
-        container.appendChild(globalCard);
-        const ctxGlobal = globalCard.querySelector('#globalPieChart').getContext('2d');
-        const globalChart = new Chart(ctxGlobal, {
-            type: 'pie',
-            data: { labels: ['Converti', 'Non converti'], datasets: [{ data: [globalStats.converti, globalStats.nonConverti], backgroundColor: ['#bae6fd', '#e9d5ff'] }] },
-            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-        });
-        activeCharts.push(globalChart);
-        const openBtn = globalCard.querySelector('.open-modal-btn');
-        if (openBtn) {
-            openBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                fillGlobalModal(filteredAppels);
-                const modal = document.getElementById('globalModal');
-                if (modal) modal.style.display = 'block';
-            });
-        }
+            return true;
+        } catch(e) { console.error(e); return false; }
     }
 
-    function applyAdminFiltersAndRender() {
-        const period = document.getElementById('adminPeriod').value;
-        let start = null, end = null;
-        if (period === 'custom') {
-            start = document.getElementById('adminDateStart').value;
-            end = document.getElementById('adminDateEnd').value;
-            if (!start || !end) { alert("Sélectionnez une plage de dates"); return; }
-        }
-        currentAdminFilter = { period, start, end };
-        renderAdminCharts();
+    async function deleteAppelFirebase(docId) {
+        try {
+            await db.collection("appels").doc(docId).delete();
+            return true;
+        } catch(e) { console.error(e); return false; }
     }
 
-    // Export synthétique (rapport)
-    function exportToExcel() {
-        const filtered = getFilteredAppelsForAdmin();
-        if (filtered.length === 0) { alert("Aucune donnée à exporter"); return; }
-        const headers = ["Conseiller", "Total appels", "Total convertis", "Taux global (%)"];
-        for (let m of ALL_MOTIFS) { headers.push(`${m} - Appels`, `${m} - Convertis`, `${m} - Taux (%)`); }
-        const rows = [];
-        for (let cons of conseillersList) {
-            const statsGlobal = getStatsForConseillerFiltered(cons, filtered);
-            if (statsGlobal.total === 0) continue;
-            const row = [cons, statsGlobal.total, statsGlobal.converti, statsGlobal.taux.toFixed(2)];
-            for (let m of ALL_MOTIFS) {
-                const s = getStatsForConseillerMotifFiltered(cons, m, filtered);
-                const taux = s.total ? ((s.converti / s.total) * 100).toFixed(2) : "0";
-                row.push(s.total, s.converti, taux);
-            }
-            rows.push(row);
-        }
-        const globalStats = getGlobalStatsFiltered(filtered);
-        const globalRow = ["GÉNÉRAL", globalStats.total, globalStats.converti, globalStats.total ? ((globalStats.converti/globalStats.total)*100).toFixed(2) : "0"];
-        for (let m of ALL_MOTIFS) {
-            const s = getStatsForMotifFiltered(m, filtered);
-            const taux = s.total ? s.taux.toFixed(2) : "0";
-            globalRow.push(s.total, s.converti, taux);
-        }
-        rows.push(globalRow);
-        const wsData = [headers, ...rows];
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Rapport_synthetique");
-        XLSX.writeFile(wb, `rapport_synthetique_${new Date().toISOString().slice(0,19)}.xlsx`);
-    }
-
-    // Export détaillé (liste des appels)
-    function exportDetailsToExcel() {
-        const filtered = getFilteredAppelsForAdmin();
-        if (filtered.length === 0) { alert("Aucun appel à exporter pour cette période"); return; }
-        const details = filtered.map(a => ({
-            "Conseiller": a.conseiller,
-            "Motif": a.motif,
-            "Statut": a.converti ? "Converti" : "Non converti",
-            "Numéro appelant": a.numero,
-            "Date et heure": new Date(a.timestamp).toLocaleString()
-        }));
-        const ws = XLSX.utils.json_to_sheet(details);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Liste_appels");
-        XLSX.writeFile(wb, `liste_appels_${new Date().toISOString().slice(0,19)}.xlsx`);
-    }
-
-    // ---------- GESTION FIRESTORE ----------
     async function addConseiller(nom) {
         if (!nom.trim()) return false;
-        if (conseillersList.includes(nom.trim())) {
-            alert("Ce conseiller existe déjà");
-            return false;
-        }
+        if (conseillersList.includes(nom.trim())) return false;
         try {
             await db.collection("conseillers").doc(nom.trim()).set({ nom: nom.trim() });
             return true;
-        } catch(e) {
-            console.error(e);
-            alert("Erreur lors de l'ajout : " + e.message);
-            return false;
-        }
+        } catch(e) { console.error(e); return false; }
     }
 
     async function deleteConseiller(nom) {
@@ -546,45 +447,10 @@
             snapshot.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
             return true;
-        } catch(e) {
-            console.error(e);
-            alert("Erreur lors de la suppression : " + e.message);
-            return false;
-        }
+        } catch(e) { console.error(e); return false; }
     }
 
-    async function addAppelFirebase(conseiller, motif, converti, numero) {
-        if (!conseiller || !motif || !numero.trim()) return false;
-        if (!conseillersList.includes(conseiller)) {
-            alert("Conseiller non reconnu");
-            return false;
-        }
-        try {
-            await db.collection("appels").add({
-                conseiller: conseiller,
-                motif: motif,
-                converti: converti,
-                numero: numero.trim(),
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            return true;
-        } catch(e) {
-            console.error(e);
-            alert("Erreur lors de l'ajout de l'appel : " + e.message);
-            return false;
-        }
-    }
-
-    async function deleteAppelFirebase(docId) {
-        try {
-            await db.collection("appels").doc(docId).delete();
-            return true;
-        } catch(e) {
-            console.error(e);
-            return false;
-        }
-    }
-
+    // ---------- AUTH PASSWORDS ----------
     async function checkPassword(pwd) {
         const snapshot = await db.collection("passwords").where("hash", "==", pwd).get();
         return !snapshot.empty;
@@ -609,6 +475,275 @@
         snap.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
         await db.collection("passwords").add({ hash: "admin123" });
+    }
+
+    // ---------- AFFICHAGE HISTORIQUE CONSEILLER ----------
+    function applyConseillerFilterAndDisplay() {
+        const conseiller = document.getElementById('conseillerSelect').value;
+        if (!conseiller) return;
+        const period = document.getElementById('conseillerPeriod').value;
+        let start = null, end = null;
+        if (period === 'custom') {
+            start = document.getElementById('conseillerDateStart').value;
+            end = document.getElementById('conseillerDateEnd').value;
+            if (!start || !end) { alert("Sélectionnez une plage de dates"); return; }
+        }
+        let filtered = allAppels.filter(a => a.conseiller === conseiller);
+        filtered = filterAppelsByDate(filtered, period, start, end);
+        filtered.sort((a,b) => b.timestamp - a.timestamp);
+        const recapDiv = document.getElementById('recapConseiller');
+        if (!filtered.length) {
+            recapDiv.innerHTML = `<p>Aucun appel pour ${conseiller} sur cette période.</p>`;
+            return;
+        }
+        let html = `<strong>📞 ${filtered.length} appels :</strong><br>`;
+        filtered.slice(0, 30).forEach(a => {
+            const statutLabel = a.statut === 'converti' ? '✅ CONVERTI' : (a.statut === 'non_converti' ? '❌ NON CONVERTI' : '❓ INCERTAIN');
+            let comm = a.commentaire ? ` (${a.commentaire})` : '';
+            if (a.commentaire && a.commentaire.includes('[Orange]')) comm = ` 🍊 ${comm}`;
+            html += `<p>${new Date(a.timestamp).toLocaleString()} - ${a.motif} - N°${a.numero} : ${statutLabel}${comm}</p>`;
+        });
+        recapDiv.innerHTML = html;
+    }
+
+    // ---------- RENDU ADMIN ----------
+    function getFilteredAppelsForAdmin() {
+        return filterAppelsByDate(allAppels, currentAdminFilter.period, currentAdminFilter.start, currentAdminFilter.end);
+    }
+
+    function renderAdminCharts() {
+        const container = document.getElementById('adminChartsContainer');
+        if (!container) return;
+        destroyCharts();
+        container.innerHTML = '';
+        const filteredAppels = getFilteredAppelsForAdmin();
+        if (conseillersList.length === 0 || filteredAppels.length === 0) {
+            container.innerHTML = '<div class="no-data">Aucune donnée pour la période sélectionnée</div>';
+            return;
+        }
+        const ALL_MOTIFS = ["Colis","Train","Avion","Recherche d'emploi","Convention","Retraite","Résiliation","Conciergerie"];
+        for (let cons of conseillersList) {
+            const stats = getStatsForConseillerFiltered(cons, filteredAppels);
+            if (stats.total === 0) continue;
+            const card = document.createElement('div');
+            card.className = 'chart-card';
+            card.innerHTML = `
+                <h4>👤 ${cons}</h4>
+                <div class="global-taux">📊 Taux de conversion (hors incertains) : <strong>${stats.taux.toFixed(1)}%</strong> (${stats.converti} convertis / ${stats.converti + stats.nonConverti} tranchés)</div>
+                <canvas id="pie-${cons.replace(/\s/g,'')}" width="300" height="180"></canvas>
+                <div class="stats-detail">
+                    <strong>📋 Détail par typologie :</strong>
+                    <table><thead><tr><th>Motif</th><th>Appels</th><th>Convertis</th><th>Non conv.</th><th>Incertains</th><th>Taux</th></tr></thead><tbody id="detail-${cons.replace(/\s/g,'')}"></tbody></table>
+                </div>
+            `;
+            container.appendChild(card);
+            const ctx = card.querySelector('canvas').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Converti', 'Non converti', 'Incertain'],
+                    datasets: [{ data: [stats.converti, stats.nonConverti, stats.incertain], backgroundColor: ['#a7f3d0', '#fecaca', '#fde68a'] }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            activeCharts.push(chart);
+            const tbody = card.querySelector('tbody');
+            for (let motif of ALL_MOTIFS) {
+                const s = getStatsForConseillerMotifFiltered(cons, motif, filteredAppels);
+                const taux = (s.converti + s.nonConverti) ? ((s.converti / (s.converti + s.nonConverti)) * 100).toFixed(1) + "%" : "--";
+                const bg = (s.converti + s.nonConverti) && (s.converti / (s.converti + s.nonConverti)) * 100 >= 60 ? '#d1fae5' : '#fee2e2';
+                tbody.innerHTML += `<tr><td><strong>${motif}</strong></td><td>${s.total}</td><td>${s.converti}</td><td>${s.nonConverti}</td><td>${s.incertain}</td><td style="background:${s.total ? bg : '#e2e8f0'}; text-align:center;">${taux}</td></tr>`;
+            }
+        }
+        // Global
+        const globalStats = getGlobalStatsFiltered(filteredAppels);
+        const globalCard = document.createElement('div');
+        globalCard.className = 'chart-card';
+        globalCard.innerHTML = `
+            <h4>🌍 GÉNÉRAL - Ensemble des appels (période filtrée)</h4>
+            <canvas id="globalPieChart" width="300" height="180"></canvas>
+            <div style="text-align:center; margin-top:8px;">
+                <span style="font-size:1rem; font-weight:bold;">${globalStats.total} appels</span><br>
+                ✅ ${globalStats.converti} convertis &nbsp;|&nbsp; ❌ ${globalStats.nonConverti} non convertis &nbsp;|&nbsp; ❓ ${globalStats.incertain} incertains<br>
+                <strong>Taux de conversion (hors incertains) : ${globalStats.taux.toFixed(1)}%</strong>
+            </div>
+            <button class="btn-detail open-modal-btn" style="margin-top:12px;">🔍 Voir détails complets</button>
+        `;
+        container.appendChild(globalCard);
+        const ctxGlobal = globalCard.querySelector('#globalPieChart').getContext('2d');
+        const globalChart = new Chart(ctxGlobal, {
+            type: 'pie',
+            data: {
+                labels: ['Converti', 'Non converti', 'Incertain'],
+                datasets: [{ data: [globalStats.converti, globalStats.nonConverti, globalStats.incertain], backgroundColor: ['#bae6fd', '#e9d5ff', '#fde68a'] }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+        activeCharts.push(globalChart);
+        const openBtn = globalCard.querySelector('.open-modal-btn');
+        openBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fillGlobalModal(filteredAppels);
+            document.getElementById('globalModal').style.display = 'block';
+        });
+    }
+
+    // ---------- MODALE DÉTAILS ----------
+    function fillGlobalModal(filteredAppels) {
+        const container = document.getElementById('modalDetailsContent');
+        const globalStats = getGlobalStatsFiltered(filteredAppels);
+        const conseillers = conseillersList;
+        const ALL_MOTIFS = ["Colis","Train","Avion","Recherche d'emploi","Convention","Retraite","Résiliation","Conciergerie"];
+        
+        let motifRows = '';
+        for (let m of ALL_MOTIFS) {
+            const s = getStatsForMotifFiltered(m, filteredAppels);
+            const taux = (s.converti + s.nonConverti) ? ((s.converti / (s.converti + s.nonConverti)) * 100).toFixed(1) + "%" : "0%";
+            motifRows += `<tr>
+                <td><strong>${m}</strong></td>
+                <td>${s.total}</td>
+                <td>${s.converti}</td>
+                <td>${s.nonConverti}</td>
+                <td>${s.incertain}</td>
+                <td><strong>${taux}</strong></td>
+            </tr>`;
+        }
+
+        let consRows = '';
+        for (let c of conseillers) {
+            const s = getStatsForConseillerFiltered(c, filteredAppels);
+            if (s.total === 0) continue;
+            consRows += `<tr>
+                <td><strong>${c}</strong></td>
+                <td>${s.total}</td>
+                <td>${s.converti}</td>
+                <td>${s.nonConverti}</td>
+                <td>${s.incertain}</td>
+                <td><strong>${s.taux.toFixed(1)}%</strong></td>
+            </tr>`;
+        }
+
+        const html = `
+            <div style="margin-bottom: 20px; padding: 10px; background: #eef2ff; border-radius: 16px;">
+                <strong>Total appels :</strong> ${globalStats.total} &nbsp;|&nbsp;
+                <strong>Convertis :</strong> ${globalStats.converti} &nbsp;|&nbsp;
+                <strong>Non convertis :</strong> ${globalStats.nonConverti} &nbsp;|&nbsp;
+                <strong>Incertains :</strong> ${globalStats.incertain} &nbsp;|&nbsp;
+                <strong>Taux conversion (hors incertains) :</strong> ${globalStats.taux.toFixed(1)}%
+            </div>
+            <h4>📋 Détail par typologie (tous conseillers)</h4>
+            <table class="modal-table">
+                <thead><tr><th>Motif</th><th>Appels</th><th>Convertis</th><th>Non convertis</th><th>Incertains</th><th>Taux</th></tr></thead>
+                <tbody>${motifRows}</tbody>
+            </table>
+            <h4>👥 Détail par conseiller (tous motifs)</h4>
+            <table class="modal-table">
+                <thead><tr><th>Conseiller</th><th>Appels</th><th>Convertis</th><th>Non convertis</th><th>Incertains</th><th>Taux</th></tr></thead>
+                <tbody>${consRows}</tbody>
+            </table>
+        `;
+        container.innerHTML = html;
+    }
+
+    // ---------- EXPORT EXCEL ----------
+    function exportToExcel() {
+        const filtered = getFilteredAppelsForAdmin();
+        if (filtered.length === 0) { alert("Aucune donnée à exporter"); return; }
+        const ALL_MOTIFS = ["Colis","Train","Avion","Recherche d'emploi","Convention","Retraite","Résiliation","Conciergerie"];
+        const headers = ["Conseiller", "Total appels", "Convertis", "Non convertis", "Incertains", "Taux conversion (%)", "Appels Orange"];
+        for (let m of ALL_MOTIFS) {
+            headers.push(`${m} - Appels`, `${m} - Convertis`, `${m} - Non convertis`, `${m} - Incertains`, `${m} - Taux (%)`);
+        }
+        const rows = [];
+        for (let cons of conseillersList) {
+            const statsGlobal = getStatsForConseillerFiltered(cons, filtered);
+            if (statsGlobal.total === 0) continue;
+            const appelsCons = filtered.filter(a => a.conseiller === cons);
+            const orangeCount = appelsCons.filter(a => a.commentaire && a.commentaire.includes('[Orange]')).length;
+            const row = [cons, statsGlobal.total, statsGlobal.converti, statsGlobal.nonConverti, statsGlobal.incertain, statsGlobal.taux.toFixed(2), orangeCount];
+            for (let m of ALL_MOTIFS) {
+                const s = getStatsForConseillerMotifFiltered(cons, m, filtered);
+                const taux = (s.converti + s.nonConverti) ? ((s.converti / (s.converti + s.nonConverti)) * 100).toFixed(2) : "0";
+                row.push(s.total, s.converti, s.nonConverti, s.incertain, taux);
+            }
+            rows.push(row);
+        }
+        const globalStats = getGlobalStatsFiltered(filtered);
+        const globalOrange = filtered.filter(a => a.commentaire && a.commentaire.includes('[Orange]')).length;
+        const globalRow = ["GÉNÉRAL", globalStats.total, globalStats.converti, globalStats.nonConverti, globalStats.incertain, globalStats.taux.toFixed(2), globalOrange];
+        for (let m of ALL_MOTIFS) {
+            const s = getStatsForMotifFiltered(m, filtered);
+            const taux = (s.converti + s.nonConverti) ? s.taux.toFixed(2) : "0";
+            globalRow.push(s.total, s.converti, s.nonConverti, s.incertain, taux);
+        }
+        rows.push(globalRow);
+        const wsData = [headers, ...rows];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Rapport_conversion");
+        XLSX.writeFile(wb, `rapport_conversion_${new Date().toISOString().slice(0,19)}.xlsx`);
+    }
+
+    // ---------- RENDU LISTES ADMIN ----------
+    function renderConseillersListAdmin() {
+        const container = document.getElementById('conseillersListAdmin');
+        if (!container) return;
+        if (!conseillersList.length) {
+            container.innerHTML = '<p>Aucun conseiller. Ajoutez-en.</p>';
+            return;
+        }
+        container.innerHTML = '';
+        conseillersList.forEach(c => {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.style.padding = '5px 0';
+            div.style.borderBottom = '1px solid #cbd5e1';
+            div.innerHTML = `<span>${c}</span><button class="delete-conseiller" data-name="${c}" style="background:#dc2626;color:white;border:none;border-radius:40px;padding:4px 12px;">🗑 Supprimer</button>`;
+            container.appendChild(div);
+        });
+        document.querySelectorAll('.delete-conseiller').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const name = btn.getAttribute('data-name');
+                if (confirm(`Supprimer le conseiller "${name}" ainsi que tous ses appels ?`)) {
+                    await deleteConseiller(name);
+                }
+            });
+        });
+    }
+
+    function renderAllAppelsListAdmin() {
+        const container = document.getElementById('allAppelsList');
+        if (!container) return;
+        const sorted = [...allAppels].sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
+        if (!sorted.length) {
+            container.innerHTML = '<p>Aucun appel.</p>';
+            return;
+        }
+        container.innerHTML = '';
+        sorted.forEach(a => {
+            const date = new Date(a.timestamp).toLocaleString();
+            const statutLabel = a.statut === 'converti' ? '✅ CONVERTI' : (a.statut === 'non_converti' ? '❌ NON CONVERTI' : '❓ INCERTAIN');
+            let comm = a.commentaire ? ` (${a.commentaire})` : '';
+            if (a.commentaire && a.commentaire.includes('[Orange]')) comm = ` 🍊 ${comm}`;
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.style.padding = '5px 0';
+            div.style.borderBottom = '1px solid #cbd5e1';
+            div.innerHTML = `<span><strong>${a.conseiller}</strong> - ${a.motif} - N°${a.numero} - ${statutLabel}${comm} - ${date}</span><button class="delete-appel-btn" data-id="${a.id}" style="background:#991b1b;color:white;border:none;border-radius:40px;padding:4px 12px;">✖ Supprimer</button>`;
+            container.appendChild(div);
+        });
+        document.querySelectorAll('.delete-appel-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-id');
+                if (confirm('Supprimer cet appel ?')) {
+                    await deleteAppelFirebase(id);
+                }
+            });
+        });
     }
 
     function renderPasswordsList() {
@@ -661,65 +796,6 @@
         });
     }
 
-    function renderConseillersListAdmin() {
-        const container = document.getElementById('conseillersListAdmin');
-        if (!container) return;
-        if (!conseillersList.length) {
-            container.innerHTML = '<p>Aucun conseiller. Ajoutez-en.</p>';
-            return;
-        }
-        container.innerHTML = '';
-        conseillersList.forEach(c => {
-            const div = document.createElement('div');
-            div.style.display = 'flex';
-            div.style.justifyContent = 'space-between';
-            div.style.alignItems = 'center';
-            div.style.padding = '5px 0';
-            div.style.borderBottom = '1px solid #cbd5e1';
-            div.innerHTML = `<span>${c}</span><button class="delete-conseiller" data-name="${c}" style="background:#dc2626;color:white;border:none;border-radius:40px;padding:4px 12px;">🗑 Supprimer</button>`;
-            container.appendChild(div);
-        });
-        document.querySelectorAll('.delete-conseiller').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const name = btn.getAttribute('data-name');
-                if (confirm(`Supprimer le conseiller "${name}" ainsi que tous ses appels ?`)) {
-                    await deleteConseiller(name);
-                }
-            });
-        });
-    }
-
-    function renderAllAppelsListAdmin() {
-        const container = document.getElementById('allAppelsList');
-        if (!container) return;
-        const sorted = [...allAppels].sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
-        if (!sorted.length) {
-            container.innerHTML = '<p>Aucun appel.</p>';
-            return;
-        }
-        container.innerHTML = '';
-        sorted.forEach(a => {
-            const date = new Date(a.timestamp).toLocaleString();
-            const conv = a.converti ? '✅ CONVERTI' : '❌ NON CONVERTI';
-            const div = document.createElement('div');
-            div.style.display = 'flex';
-            div.style.justifyContent = 'space-between';
-            div.style.alignItems = 'center';
-            div.style.padding = '5px 0';
-            div.style.borderBottom = '1px solid #cbd5e1';
-            div.innerHTML = `<span><strong>${a.conseiller}</strong> - ${a.motif} - N°${a.numero} - ${conv} - ${date}</span><button class="delete-appel-btn" data-id="${a.id}" style="background:#991b1b;color:white;border:none;border-radius:40px;padding:4px 12px;">✖ Supprimer</button>`;
-            container.appendChild(div);
-        });
-        document.querySelectorAll('.delete-appel-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.getAttribute('data-id');
-                if (confirm('Supprimer cet appel ?')) {
-                    await deleteAppelFirebase(id);
-                }
-            });
-        });
-    }
-
     // ---------- ÉCOUTEURS FIRESTORE ----------
     function setupFirestoreListeners() {
         if (unsubscribeAppels) unsubscribeAppels();
@@ -732,38 +808,177 @@
                 let timestamp = data.timestamp ? data.timestamp.toDate().getTime() : Date.now();
                 return { id: doc.id, ...data, timestamp };
             });
-            if (document.getElementById('adminPanel').classList.contains('active-panel') && document.getElementById('adminContent').style.display !== 'none') {
-                if (document.querySelector('.sub-tab-btn.active')?.getAttribute('data-subtab') === 'dashboard') {
-                    renderAdminCharts();
-                } else {
-                    renderAllAppelsListAdmin();
-                }
-            }
-            if (document.getElementById('conseillerPanel').classList.contains('active-panel')) {
-                applyConseillerFilterAndDisplay();
-            }
+            setStatus(`${allAppels.length} appels chargés.`, 'success');
+            updateUI();
+        }, err => {
+            console.error("Erreur listener appels:", err);
+            setStatus("Erreur de synchronisation: " + err.message, 'error');
         });
 
         unsubscribeConseillers = db.collection("conseillers").onSnapshot(snapshot => {
             conseillersList = snapshot.docs.map(doc => doc.data().nom);
             refreshAllSelects();
-            if (document.getElementById('adminPanel').classList.contains('active-panel') && document.getElementById('adminContent').style.display !== 'none') {
-                renderConseillersListAdmin();
-                if (document.querySelector('.sub-tab-btn.active')?.getAttribute('data-subtab') === 'dashboard') {
-                    renderAdminCharts();
-                }
-            }
-            if (document.getElementById('conseillerPanel').classList.contains('active-panel')) {
-                applyConseillerFilterAndDisplay();
-            }
+            updateUI();
+        }, err => {
+            console.error("Erreur listener conseillers:", err);
         });
 
         unsubscribePasswords = db.collection("passwords").onSnapshot(snapshot => {
             adminPasswords = snapshot.docs.map(doc => doc.data().hash);
-            if (document.getElementById('adminPanel').classList.contains('active-panel') && document.getElementById('adminContent').style.display !== 'none') {
-                renderPasswordsList();
+            renderPasswordsList();
+        }, err => {
+            console.error("Erreur listener passwords:", err);
+        });
+    }
+
+    // ---------- METTRE À JOUR L'UI ----------
+    function updateUI() {
+        if (document.getElementById('conseillerPanel').classList.contains('active-panel')) {
+            applyConseillerFilterAndDisplay();
+        }
+        if (document.getElementById('adminPanel').classList.contains('active-panel') && document.getElementById('adminContent').style.display !== 'none') {
+            renderConseillersListAdmin();
+            renderAllAppelsListAdmin();
+            renderPasswordsList();
+            if (document.querySelector('.sub-tab-btn.active')?.getAttribute('data-subtab') === 'dashboard') {
+                renderAdminCharts();
+            }
+        }
+    }
+
+    // ---------- ÉVÉNEMENTS UI ----------
+    function toggleDateRange(selectId, rangeDivId) {
+        const s = document.getElementById(selectId);
+        const d = document.getElementById(rangeDivId);
+        if (s.value === 'custom') d.style.display = 'flex';
+        else d.style.display = 'none';
+    }
+
+    function setupEventListeners() {
+        // Onglets principaux
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-tab');
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
+                if (tab === 'conseiller') {
+                    document.getElementById('conseillerPanel').classList.add('active-panel');
+                    refreshAllSelects();
+                    applyConseillerFilterAndDisplay();
+                } else {
+                    document.getElementById('adminPanel').classList.add('active-panel');
+                    if (isAuthenticated()) {
+                        showAdminContent();
+                        setupAdminSubTabs();
+                    } else {
+                        showAdminLogin();
+                    }
+                }
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Login admin
+        document.getElementById('loginAdminBtn').addEventListener('click', async () => {
+            const pwd = document.getElementById('adminPasswordInput').value;
+            const remember = document.getElementById('rememberAdmin').checked;
+            const errorDiv = document.getElementById('loginError');
+            if (await checkPassword(pwd)) {
+                setAuth(remember);
+                showAdminContent();
+                setupAdminSubTabs();
+                errorDiv.style.display = 'none';
+            } else {
+                errorDiv.style.display = 'block';
             }
         });
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+
+        // Gestion mots de passe
+        document.getElementById('addPasswordBtn').addEventListener('click', async () => {
+            const newPwd = document.getElementById('newPassword').value;
+            const confirmPwd = document.getElementById('confirmPassword').value;
+            if (!newPwd || newPwd !== confirmPwd) { alert("Les mots de passe ne correspondent pas"); return; }
+            if (await addPassword(newPwd)) {
+                alert("Mot de passe ajouté");
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            } else { alert("Mot de passe déjà existant ou invalide"); }
+        });
+        document.getElementById('resetPasswordsBtn').addEventListener('click', async () => {
+            if (confirm("Réinitialiser tous les mots de passe (un seul : admin123) ?")) {
+                await resetPasswords();
+                alert("Mots de passe réinitialisés.");
+            }
+        });
+
+        // Espace conseiller
+        document.getElementById('conseillerPeriod').addEventListener('change', () => toggleDateRange('conseillerPeriod', 'conseillerDateRange'));
+        document.getElementById('applyConseillerFilter').addEventListener('click', applyConseillerFilterAndDisplay);
+        document.getElementById('conseillerSelect').addEventListener('change', applyConseillerFilterAndDisplay);
+
+        const handleConseillerClick = async (statut, commentairePrefix = '') => {
+            const cons = document.getElementById('conseillerSelect').value;
+            const motif = document.getElementById('motifSelect').value;
+            const num = document.getElementById('numeroAppelant').value;
+            let comment = document.getElementById('commentaireAppel').value;
+            if (commentairePrefix) {
+                comment = commentairePrefix + (comment ? ' ' + comment : '');
+            }
+            if (await addAppelFirebase(cons, motif, statut, num, comment)) {
+                alert(`Appel ${statut.toUpperCase()} enregistré`);
+                document.getElementById('numeroAppelant').value = '';
+                document.getElementById('commentaireAppel').value = '';
+                applyConseillerFilterAndDisplay();
+            } else alert('Numéro requis ou conseiller invalide');
+        };
+        document.getElementById('btnConverti').addEventListener('click', () => handleConseillerClick('converti'));
+        document.getElementById('btnNonConverti').addEventListener('click', () => handleConseillerClick('non_converti'));
+        document.getElementById('btnIncertain').addEventListener('click', () => handleConseillerClick('incertain'));
+        document.getElementById('btnOrange').addEventListener('click', () => handleConseillerClick('non_converti', '[Orange]'));
+
+        // Admin dashboard
+        document.getElementById('adminPeriod').addEventListener('change', () => toggleDateRange('adminPeriod', 'adminDateRange'));
+        document.getElementById('applyAdminFilter').addEventListener('click', () => {
+            const period = document.getElementById('adminPeriod').value;
+            let start = null, end = null;
+            if (period === 'custom') {
+                start = document.getElementById('adminDateStart').value;
+                end = document.getElementById('adminDateEnd').value;
+                if (!start || !end) { alert("Sélectionnez une plage de dates"); return; }
+            }
+            currentAdminFilter = { period, start, end };
+            renderAdminCharts();
+        });
+        document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+
+        // Admin gestion conseillers
+        document.getElementById('addConseillerBtn').addEventListener('click', async () => {
+            const name = document.getElementById('newConseillerName').value;
+            if (await addConseiller(name)) {
+                alert(`Conseiller "${name}" ajouté`);
+                document.getElementById('newConseillerName').value = '';
+            } else alert('Nom invalide ou déjà existant');
+        });
+
+        const adminAdd = async (statut, commentairePrefix = '') => {
+            const cons = document.getElementById('adminConseillerSelect').value;
+            const motif = document.getElementById('adminMotifSelect').value;
+            const num = document.getElementById('adminNumero').value;
+            let comment = document.getElementById('adminCommentaire').value;
+            if (commentairePrefix) {
+                comment = commentairePrefix + (comment ? ' ' + comment : '');
+            }
+            if (await addAppelFirebase(cons, motif, statut, num, comment)) {
+                alert('Appel ajouté');
+                document.getElementById('adminNumero').value = '';
+                document.getElementById('adminCommentaire').value = '';
+            } else alert('Erreur');
+        };
+        document.getElementById('adminAddConverti').addEventListener('click', () => adminAdd('converti'));
+        document.getElementById('adminAddNonConverti').addEventListener('click', () => adminAdd('non_converti'));
+        document.getElementById('adminAddIncertain').addEventListener('click', () => adminAdd('incertain'));
+        document.getElementById('adminAddOrange').addEventListener('click', () => adminAdd('non_converti', '[Orange]'));
     }
 
     // ---------- AUTH ADMIN ----------
@@ -793,8 +1008,7 @@
         renderPasswordsList();
         renderAdminCharts();
         refreshAllSelects();
-        const activeSubTab = document.querySelector('#adminContent .sub-tab-btn.active');
-        if (activeSubTab) activeSubTab.click();
+        document.querySelector('#adminContent .sub-tab-btn.active')?.click();
     }
 
     function setupAdminSubTabs() {
@@ -808,12 +1022,11 @@
                 const target = btn.getAttribute('data-subtab');
                 subTabs.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                if (panels.dashboard) panels.dashboard.style.display = 'none';
-                if (panels.gestion) panels.gestion.style.display = 'none';
-                if (target === 'dashboard' && panels.dashboard) {
+                Object.values(panels).forEach(p => p.style.display = 'none');
+                if (target === 'dashboard') {
                     panels.dashboard.style.display = 'block';
                     renderAdminCharts();
-                } else if (target === 'gestion' && panels.gestion) {
+                } else {
                     panels.gestion.style.display = 'block';
                     renderConseillersListAdmin();
                     renderAllAppelsListAdmin();
@@ -826,171 +1039,27 @@
         if (panels.gestion) panels.gestion.style.display = 'none';
     }
 
-    // ---------- ÉVÉNEMENTS UI ----------
-    function toggleDateRange(selectId, rangeDivId) {
-        const s = document.getElementById(selectId);
-        const d = document.getElementById(rangeDivId);
-        if (s && d) {
-            if (s.value === 'custom') d.style.display = 'flex';
-            else d.style.display = 'none';
-        }
-    }
-
-    function setupEventListeners() {
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-tab');
-                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
-                if (tab === 'conseiller') {
-                    document.getElementById('conseillerPanel').classList.add('active-panel');
-                    refreshAllSelects();
-                    applyConseillerFilterAndDisplay();
-                } else {
-                    document.getElementById('adminPanel').classList.add('active-panel');
-                    if (isAuthenticated()) {
-                        showAdminContent();
-                        setupAdminSubTabs();
-                    } else {
-                        showAdminLogin();
-                    }
-                }
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
-        });
-
-        const loginBtn = document.getElementById('loginAdminBtn');
-        if (loginBtn) {
-            loginBtn.addEventListener('click', async () => {
-                const pwd = document.getElementById('adminPasswordInput').value;
-                const remember = document.getElementById('rememberAdmin').checked;
-                if (await checkPassword(pwd)) {
-                    setAuth(remember);
-                    showAdminContent();
-                    setupAdminSubTabs();
-                } else {
-                    alert("Mot de passe incorrect");
-                }
-            });
-        }
-
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) logoutBtn.addEventListener('click', logout);
-
-        const addPwdBtn = document.getElementById('addPasswordBtn');
-        if (addPwdBtn) {
-            addPwdBtn.addEventListener('click', async () => {
-                const newPwd = document.getElementById('newPassword').value;
-                const confirmPwd = document.getElementById('confirmPassword').value;
-                if (!newPwd || newPwd !== confirmPwd) { alert("Les mots de passe ne correspondent pas"); return; }
-                if (await addPassword(newPwd)) {
-                    alert("Mot de passe ajouté");
-                    document.getElementById('newPassword').value = '';
-                    document.getElementById('confirmPassword').value = '';
-                } else { alert("Mot de passe déjà existant ou invalide"); }
-            });
-        }
-
-        const resetPwdBtn = document.getElementById('resetPasswordsBtn');
-        if (resetPwdBtn) {
-            resetPwdBtn.addEventListener('click', async () => {
-                if (confirm("Réinitialiser tous les mots de passe (un seul : admin123) ?")) {
-                    await resetPasswords();
-                    alert("Mots de passe réinitialisés.");
-                }
-            });
-        }
-
-        const conseillerPeriod = document.getElementById('conseillerPeriod');
-        if (conseillerPeriod) conseillerPeriod.addEventListener('change', () => toggleDateRange('conseillerPeriod', 'conseillerDateRange'));
-        const applyConseillerFilter = document.getElementById('applyConseillerFilter');
-        if (applyConseillerFilter) applyConseillerFilter.addEventListener('click', applyConseillerFilterAndDisplay);
-        const conseillerSelect = document.getElementById('conseillerSelect');
-        if (conseillerSelect) conseillerSelect.addEventListener('change', applyConseillerFilterAndDisplay);
-        const btnConverti = document.getElementById('btnConverti');
-        if (btnConverti) {
-            btnConverti.addEventListener('click', async () => {
-                const cons = document.getElementById('conseillerSelect').value;
-                const motif = document.getElementById('motifSelect').value;
-                const num = document.getElementById('numeroAppelant').value;
-                if (await addAppelFirebase(cons, motif, true, num)) {
-                    alert('Appel CONVERTI enregistré');
-                    document.getElementById('numeroAppelant').value = '';
-                    applyConseillerFilterAndDisplay();
-                } else alert('Numéro requis ou conseiller invalide');
-            });
-        }
-        const btnNonConverti = document.getElementById('btnNonConverti');
-        if (btnNonConverti) {
-            btnNonConverti.addEventListener('click', async () => {
-                const cons = document.getElementById('conseillerSelect').value;
-                const motif = document.getElementById('motifSelect').value;
-                const num = document.getElementById('numeroAppelant').value;
-                if (await addAppelFirebase(cons, motif, false, num)) {
-                    alert('Appel NON CONVERTI enregistré');
-                    document.getElementById('numeroAppelant').value = '';
-                    applyConseillerFilterAndDisplay();
-                } else alert('Numéro requis ou conseiller invalide');
-            });
-        }
-        const refreshRecap = document.getElementById('refreshRecap');
-        if (refreshRecap) refreshRecap.addEventListener('click', applyConseillerFilterAndDisplay);
-
-        const adminPeriod = document.getElementById('adminPeriod');
-        if (adminPeriod) adminPeriod.addEventListener('change', () => toggleDateRange('adminPeriod', 'adminDateRange'));
-        const applyAdminFilter = document.getElementById('applyAdminFilter');
-        if (applyAdminFilter) applyAdminFilter.addEventListener('click', applyAdminFiltersAndRender);
-        const exportExcelBtn = document.getElementById('exportExcelBtn');
-        if (exportExcelBtn) exportExcelBtn.addEventListener('click', exportToExcel);
-        const exportDetailsBtn = document.getElementById('exportDetailsBtn');
-        if (exportDetailsBtn) exportDetailsBtn.addEventListener('click', exportDetailsToExcel);
-
-        const addConseillerBtn = document.getElementById('addConseillerBtn');
-        if (addConseillerBtn) {
-            addConseillerBtn.addEventListener('click', async () => {
-                const name = document.getElementById('newConseillerName').value;
-                if (await addConseiller(name)) {
-                    alert(`Conseiller "${name}" ajouté`);
-                    document.getElementById('newConseillerName').value = '';
-                }
-            });
-        }
-
-        const adminAddConverti = document.getElementById('adminAddConverti');
-        const adminAddNonConverti = document.getElementById('adminAddNonConverti');
-        if (adminAddConverti && adminAddNonConverti) {
-            const adminAdd = async (converti) => {
-                const cons = document.getElementById('adminConseillerSelect').value;
-                const motif = document.getElementById('adminMotifSelect').value;
-                const num = document.getElementById('adminNumero').value;
-                if (await addAppelFirebase(cons, motif, converti, num)) {
-                    alert('Appel ajouté');
-                    document.getElementById('adminNumero').value = '';
-                } else alert('Erreur');
-            };
-            adminAddConverti.addEventListener('click', () => adminAdd(true));
-            adminAddNonConverti.addEventListener('click', () => adminAdd(false));
-        }
-    }
-
     // ---------- INITIALISATION ----------
     async function init() {
+        if (!initFirebase()) return;
         await initializeDefaultData();
         setupFirestoreListeners();
         setupEventListeners();
         toggleDateRange('conseillerPeriod', 'conseillerDateRange');
         toggleDateRange('adminPeriod', 'adminDateRange');
+        if (isAuthenticated()) {
+            showAdminContent();
+            setupAdminSubTabs();
+        }
         setTimeout(() => {
             if (conseillersList.length) {
-                const select = document.getElementById('conseillerSelect');
-                if (select) {
-                    select.value = conseillersList[0];
-                    applyConseillerFilterAndDisplay();
-                }
+                document.getElementById('conseillerSelect').value = conseillersList[0];
+                applyConseillerFilterAndDisplay();
             }
         }, 1000);
     }
-    init();
+
+    document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
