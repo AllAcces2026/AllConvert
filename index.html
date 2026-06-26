@@ -167,7 +167,7 @@
                     <div class="filter-group"><label>Période</label><select id="adminPeriod"><option value="today">Aujourd'hui</option><option value="week">Cette semaine</option><option value="month">Ce mois</option><option value="custom">Intervalle personnalisé</option></select></div>
                     <div class="filter-group" id="adminDateRange" style="display:none;"><label>Du</label><input type="date" id="adminDateStart"><label>Au</label><input type="date" id="adminDateEnd"></div>
                     <div class="filter-group"><button id="applyAdminFilter" class="btn-secondary">Appliquer filtre</button></div>
-                    <div class="filter-group"><button id="exportExcelBtn" class="btn-export">📎 Exporter Excel (rapport)</button></div>
+                    <div class="filter-group"><button id="exportExcelBtn" class="btn-export">📎 Exporter Excel (rapport complet)</button></div>
                 </div>
                 <div id="adminChartsContainer"><div class="no-data">Chargement des données...</div></div>
             </div>
@@ -645,16 +645,19 @@
         container.innerHTML = html;
     }
 
-    // ---------- EXPORT EXCEL ----------
+    // ---------- EXPORT EXCEL COMPLET (avec DÉTAIL des appels) ----------
     function exportToExcel() {
         const filtered = getFilteredAppelsForAdmin();
         if (filtered.length === 0) { alert("Aucune donnée à exporter"); return; }
+        
         const ALL_MOTIFS = ["Colis","Train","Avion","Recherche d'emploi","Convention","Retraite","Résiliation","Conciergerie"];
-        const headers = ["Conseiller", "Total appels", "Convertis", "Non convertis", "Incertains", "Taux conversion (%)", "Appels Orange"];
+        
+        // ---- 1. ONGLET "Synthèse" (statistiques) ----
+        const synthHeaders = ["Conseiller", "Total appels", "Convertis", "Non convertis", "Incertains", "Taux conversion (%)", "Appels Orange"];
         for (let m of ALL_MOTIFS) {
-            headers.push(`${m} - Appels`, `${m} - Convertis`, `${m} - Non convertis`, `${m} - Incertains`, `${m} - Taux (%)`);
+            synthHeaders.push(`${m} - Appels`, `${m} - Convertis`, `${m} - Non convertis`, `${m} - Incertains`, `${m} - Taux (%)`);
         }
-        const rows = [];
+        const synthRows = [];
         for (let cons of conseillersList) {
             const statsGlobal = getStatsForConseillerFiltered(cons, filtered);
             if (statsGlobal.total === 0) continue;
@@ -666,8 +669,9 @@
                 const taux = (s.converti + s.nonConverti) ? ((s.converti / (s.converti + s.nonConverti)) * 100).toFixed(2) : "0";
                 row.push(s.total, s.converti, s.nonConverti, s.incertain, taux);
             }
-            rows.push(row);
+            synthRows.push(row);
         }
+        // Ligne globale
         const globalStats = getGlobalStatsFiltered(filtered);
         const globalOrange = filtered.filter(a => a.commentaire && a.commentaire.includes('[Orange]')).length;
         const globalRow = ["GÉNÉRAL", globalStats.total, globalStats.converti, globalStats.nonConverti, globalStats.incertain, globalStats.taux.toFixed(2), globalOrange];
@@ -676,12 +680,31 @@
             const taux = (s.converti + s.nonConverti) ? s.taux.toFixed(2) : "0";
             globalRow.push(s.total, s.converti, s.nonConverti, s.incertain, taux);
         }
-        rows.push(globalRow);
-        const wsData = [headers, ...rows];
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        synthRows.push(globalRow);
+
+        // ---- 2. ONGLET "Détail" (tous les appels) ----
+        const detailHeaders = ["Date", "Conseiller", "Motif", "Statut", "Numéro", "Commentaire"];
+        const detailRows = filtered
+            .sort((a,b) => b.timestamp - a.timestamp)
+            .map(a => {
+                const date = new Date(a.timestamp).toLocaleString();
+                const statutLabel = a.statut === 'converti' ? 'Converti' : (a.statut === 'non_converti' ? 'Non converti' : 'Incertain');
+                return [date, a.conseiller, a.motif, statutLabel, a.numero, a.commentaire || ''];
+            });
+
+        // ---- 3. CRÉATION DU CLASSEUR AVEC 2 ONGLETS ----
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Rapport_conversion");
-        XLSX.writeFile(wb, `rapport_conversion_${new Date().toISOString().slice(0,19)}.xlsx`);
+        
+        // Onglet Synthèse
+        const wsSynth = XLSX.utils.aoa_to_sheet([synthHeaders, ...synthRows]);
+        XLSX.utils.book_append_sheet(wb, wsSynth, "Synthèse");
+        
+        // Onglet Détail
+        const wsDetail = XLSX.utils.aoa_to_sheet([detailHeaders, ...detailRows]);
+        XLSX.utils.book_append_sheet(wb, wsDetail, "Détail appels");
+        
+        // Télécharger
+        XLSX.writeFile(wb, `rapport_appels_${new Date().toISOString().slice(0,19).replace(/[:-]/g, '')}.xlsx`);
     }
 
     // ---------- RENDU LISTES ADMIN ----------
